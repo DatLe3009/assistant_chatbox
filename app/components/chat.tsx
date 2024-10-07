@@ -144,14 +144,43 @@ const Chat = ({
     appendMessage("assistant", "");
   };
 
+  // voice output
+  let accumulatedText = ""; 
+  let timeoutId = null;
+
+  const isCompleteSentence = (text) => {  
+    return /[.!?]\s*$/.test(text);
+  };
+
   // textDelta - append text to last assistant message
   const handleTextDelta = (delta) => {
     if (delta.value != null) {
+      accumulatedText += delta.value;
       appendToLastMessage(delta.value);
     };
     if (delta.annotations != null) {
       annotateLastMessage(delta.annotations);
     }
+
+    // voice output
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => {
+      if (accumulatedText && isCompleteSentence(accumulatedText)) {
+        const utterance = new SpeechSynthesisUtterance(accumulatedText);
+        utterance.lang = 'vi-VN';
+
+        utterance.onstart = () => {
+        };
+    
+        utterance.onend = () => {
+          accumulatedText = "";
+        };
+
+        window.speechSynthesis.speak(utterance);
+      }
+    }, 3000); 
   };
 
   // imageFileDone - show image in chat
