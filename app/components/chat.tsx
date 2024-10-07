@@ -4,6 +4,9 @@ import React, { useState, useEffect, useRef } from "react";
 import styles from "./chat.module.css";
 import { AssistantStream } from "openai/lib/AssistantStream";
 import Markdown from "react-markdown";
+
+import SpeechInput from './speechInput';
+
 // @ts-expect-error - no types for this yet
 import { AssistantStreamEvent } from "openai/resources/beta/assistants/assistants";
 import { RequiredActionFunctionToolCall } from "openai/resources/beta/threads/runs/runs";
@@ -248,6 +251,10 @@ const Chat = ({
     
   }
 
+  const handleSpeechText = (text: string) => {
+    setUserInput(text);
+  };
+
   return (
     <div className={styles.chatContainer}>
       <div className={styles.messages}>
@@ -274,6 +281,7 @@ const Chat = ({
         >
           Send
         </button>
+        <SpeechInput onReceiveText={handleSpeechText} />
       </form>
     </div>
   );
