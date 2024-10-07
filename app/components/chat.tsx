@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from "react";
 import styles from "./chat.module.css";
 import { AssistantStream } from "openai/lib/AssistantStream";
 import Markdown from "react-markdown";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 
 import SpeechInput from './speechInput';
 
@@ -66,6 +68,7 @@ const Chat = ({
   const [userInput, setUserInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [inputDisabled, setInputDisabled] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [threadId, setThreadId] = useState("");
 
   // automatically scroll to bottom of chat
@@ -274,14 +277,16 @@ const Chat = ({
           onChange={(e) => setUserInput(e.target.value)}
           placeholder="Enter your question"
         />
-        <button
-          type="submit"
-          className={styles.button}
-          disabled={inputDisabled}
-        >
-          Send
-        </button>
-        <SpeechInput onReceiveText={handleSpeechText} />
+        <div className={styles.buttonGroup}>
+          <button
+            type="submit"
+            className={styles.button}
+            disabled={inputDisabled}
+          >
+            <FontAwesomeIcon icon={faPaperPlane} size="lg"/>
+          </button>
+          <SpeechInput onReceiveText={handleSpeechText} isListening={isListening} setIsListening={setIsListening}/>
+        </div>
       </form>
     </div>
   );

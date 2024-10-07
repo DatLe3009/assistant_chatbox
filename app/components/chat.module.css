@@ -30,16 +30,26 @@
 }
 
 .button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: 8px 24px;
   background-color: #000;
   color: white;
   border: none;
   font-size: 1em;
-  border-radius: 60px; /* Removed duplicate border-radius property */
+  border-radius: 60px;
+  /* Removed duplicate border-radius property */
 }
 
 .button:disabled {
   background-color: lightgrey;
+}
+
+.buttonGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .messages {
@@ -86,7 +96,7 @@
   counter-reset: line;
 }
 
-.codeMessage > div {
+.codeMessage>div {
   margin-top: 4px;
 }
 

@@ -1,7 +1,11 @@
 import styles from "./chat.module.css";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMicrophone, faStopCircle } from '@fortawesome/free-solid-svg-icons';
 
 interface SpeechInputProps {
     onReceiveText: (text: string) => void;
+    isListening: boolean;
+    setIsListening: (isListening: boolean) => void;
 }
 
 declare global {
@@ -11,13 +15,14 @@ declare global {
     }
 }
 
-const SpeechInput = ({ onReceiveText }: SpeechInputProps) => {
+const SpeechInput = ({ onReceiveText, isListening, setIsListening }: SpeechInputProps) => {
     const startListening = () => {
       if (typeof window !== 'undefined') {  // check client-side
           const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
           recognition.lang = 'vi-VN';
   
           recognition.onstart = () => {
+            setIsListening(true);
           };
   
           recognition.onresult = (event) => {
@@ -26,10 +31,12 @@ const SpeechInput = ({ onReceiveText }: SpeechInputProps) => {
           };
   
           recognition.onend = () => {
+            setIsListening(false);
           };
   
           recognition.onerror = (event) => {
             console.error("Speech recognition error detected: ", event.error);
+            setIsListening(false);
           };
   
           recognition.start();
@@ -38,8 +45,8 @@ const SpeechInput = ({ onReceiveText }: SpeechInputProps) => {
   
     return (
       <div>
-        <button type="button" className={styles.button} onClick={startListening} >
-          <p>Tim kiem bang giong noi</p>
+        <button type="button" className={styles.button} onClick={startListening}>
+        <FontAwesomeIcon icon={isListening? faStopCircle: faMicrophone} size="lg"/>
         </button>
       </div>
     );
