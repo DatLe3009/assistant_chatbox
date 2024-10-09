@@ -1,11 +1,14 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import styles from "../shared/page.module.css";
 
 import Chat from "../../components/chat";
 import FileViewer from "../../components/file-viewer";
 
 const FileSearchPage = () => {
+  const [isListening, setIsListening] = useState(false);
+  const [isTalking, setIsTalking] = useState(false);
+
   return (
     <main className={styles.main}>
       <div className={styles.container}>
@@ -14,7 +17,12 @@ const FileSearchPage = () => {
         </div>
         <div className={styles.chatContainer}>
           <div className={styles.chat}>
-            <Chat />
+            <Chat 
+                isListening={isListening}
+                isTalking={isTalking}
+                setIsListening={setIsListening}
+                setIsTalking={setIsTalking}
+            />
           </div>
         </div>
       </div>

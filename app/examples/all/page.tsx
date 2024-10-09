@@ -8,6 +8,8 @@ import { getWeather } from "../../utils/weather";
 import FileViewer from "../../components/file-viewer";
 
 const FunctionCalling = () => {
+  const [isListening, setIsListening] = useState(false);
+  const [isTalking, setIsTalking] = useState(false);
   const [weatherData, setWeatherData] = useState({});
 
   const functionCallHandler = async (call) => {
@@ -39,6 +41,7 @@ const FunctionCalling = () => {
   // );
 
   return (
+  
     <main className={styles.main}>
       <div className={styles.container}>
         <div className={styles.column}>
@@ -47,7 +50,13 @@ const FunctionCalling = () => {
         </div>
         <div className={styles.chatContainer}>
           <div className={styles.chat}>
-            <Chat functionCallHandler={functionCallHandler} />
+            <Chat 
+              functionCallHandler={functionCallHandler}
+              isListening={isListening}
+              isTalking={isTalking}
+              setIsListening={setIsListening}
+              setIsTalking={setIsTalking}
+            />
           </div>
         </div>
       </div>

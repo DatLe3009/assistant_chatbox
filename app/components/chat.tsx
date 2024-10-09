@@ -60,15 +60,23 @@ type ChatProps = {
   functionCallHandler?: (
     toolCall: RequiredActionFunctionToolCall
   ) => Promise<string>;
+  setIsListening: (listening: boolean) => void;
+  setIsTalking: (talking: boolean) => void;
+  isListening: boolean;
+  isTalking: boolean;  
 };
 
 const Chat = ({
   functionCallHandler = () => Promise.resolve(""), // default to return empty string
+  setIsListening,
+  setIsTalking,
+  isListening,
+  isTalking,
 }: ChatProps) => {
   const [userInput, setUserInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [inputDisabled, setInputDisabled] = useState(false);
-  const [isListening, setIsListening] = useState(false);
+  // const [isListening, setIsListening] = useState(false);
   const [threadId, setThreadId] = useState("");
 
   // automatically scroll to bottom of chat
@@ -168,13 +176,16 @@ const Chat = ({
     }
     timeoutId = setTimeout(() => {
       if (accumulatedText && isCompleteSentence(accumulatedText)) {
+        setIsTalking(true);
         const utterance = new SpeechSynthesisUtterance(accumulatedText);
         utterance.lang = 'vi-VN';
 
         utterance.onstart = () => {
+          setIsTalking(true);
         };
     
         utterance.onend = () => {
+          setIsTalking(false);
           accumulatedText = "";
         };
 
@@ -310,7 +321,7 @@ const Chat = ({
           <button
             type="submit"
             className={styles.button}
-            disabled={inputDisabled}
+            disabled={inputDisabled || isListening || isTalking}
           >
             <FontAwesomeIcon icon={faPaperPlane} size="lg"/>
           </button>

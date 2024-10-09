@@ -45,7 +45,7 @@ const SpeechInput = ({ onReceiveText, isListening, setIsListening }: SpeechInput
   
     return (
       <div>
-        <button type="button" className={styles.button} onClick={startListening}>
+        <button type="button" className={styles.button} onClick={startListening} disabled={isListening}>
         <FontAwesomeIcon icon={isListening? faStopCircle: faMicrophone} size="lg"/>
         </button>
       </div>
