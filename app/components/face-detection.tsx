@@ -45,7 +45,7 @@ const FaceDetection = ({setIsSleeping}) => {
         // faceapi.draw.drawDetections(canvasRef.current, resizedDetections);
 
         if (detections.length > 0) {
-            setIsSleeping(true);
+            setIsSleeping(false);
 
             // Nếu đã có timeout đang đếm ngược để chuyển sang "Không có người", hủy nó
             if (timeoutRef.current) {
@@ -56,7 +56,7 @@ const FaceDetection = ({setIsSleeping}) => {
             // Chỉ khi không có khuôn mặt, bắt đầu hẹn giờ đợi 10s để chuyển trạng thái
             if (!timeoutRef.current) {
                 timeoutRef.current = setTimeout(() => {
-                  setIsSleeping(false);
+                  setIsSleeping(true);
                   timeoutRef.current = null;
             }, 3000);
             }  

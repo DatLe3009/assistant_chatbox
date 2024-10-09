@@ -12,7 +12,7 @@ import FaceDetection from "../../components/face-detection";
 const Home = () => {
   const [isListening, setIsListening] = useState(false);
   const [isTalking, setIsTalking] = useState(false);
-  const [isSleeping, setIsSleeping] = useState(false);
+  const [isSleeping, setIsSleeping] = useState(true);
 
   return (
     <main className={styles.main}>
