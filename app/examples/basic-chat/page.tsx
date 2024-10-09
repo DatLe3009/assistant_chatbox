@@ -5,12 +5,14 @@ import styles from "../shared/page.module.css";
 
 import Chat from "../../components/chat";
 import RobotViewer from "../../components/robot-viewer";
+import FaceDetection from "../../components/face-detection";
 
 
 
 const Home = () => {
   const [isListening, setIsListening] = useState(false);
   const [isTalking, setIsTalking] = useState(false);
+  const [isSleeping, setIsSleeping] = useState(false);
 
   return (
     <main className={styles.main}>
@@ -19,6 +21,10 @@ const Home = () => {
           <RobotViewer 
             isListening={isListening}
             isTalking={isTalking}
+            isSleeping={isSleeping}
+          />
+          <FaceDetection
+            setIsSleeping={setIsSleeping} 
           />
         </div>
         <div className={styles.chatContainer}>
