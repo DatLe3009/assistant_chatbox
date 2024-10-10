@@ -32,6 +32,7 @@ const Home = () => {
             <Chat 
               isListening={isListening}
               isTalking={isTalking}
+              isSleeping={isSleeping}
               setIsListening={setIsListening}
               setIsTalking={setIsTalking}
             />

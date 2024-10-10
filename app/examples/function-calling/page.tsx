@@ -14,6 +14,10 @@ interface WeatherData {
 }
 
 const FunctionCalling = () => {
+  const [isListening, setIsListening] = useState(false);
+  const [isTalking, setIsTalking] = useState(false);
+  const [isSleeping, setIsSleeping] = useState(true);
+
   const [weatherData, setWeatherData] = useState<WeatherData>({});
   const isEmpty = Object.keys(weatherData).length === 0;
 
@@ -38,7 +42,14 @@ const FunctionCalling = () => {
         </div>
         <div className={styles.chatContainer}>
           <div className={styles.chat}>
-            <Chat functionCallHandler={functionCallHandler} />
+            <Chat 
+              functionCallHandler={functionCallHandler}
+              isListening={isListening}
+              isTalking={isTalking}
+              isSleeping={isSleeping}
+              setIsListening={setIsListening}
+              setIsTalking={setIsTalking} 
+            />
           </div>
         </div>
       </div>

@@ -63,7 +63,8 @@ type ChatProps = {
   setIsListening: (listening: boolean) => void;
   setIsTalking: (talking: boolean) => void;
   isListening: boolean;
-  isTalking: boolean;  
+  isTalking: boolean;
+  isSleeping: boolean;  
 };
 
 const Chat = ({
@@ -72,12 +73,39 @@ const Chat = ({
   setIsTalking,
   isListening,
   isTalking,
+  isSleeping,
 }: ChatProps) => {
   const [userInput, setUserInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [inputDisabled, setInputDisabled] = useState(false);
-  // const [isListening, setIsListening] = useState(false);
   const [threadId, setThreadId] = useState("");
+
+  // voice output
+  let timeoutId = null;
+  let accumulatedText = ""; 
+ 
+  // openning statement when isSleeping: true => false
+  const prev_isSleeping = useRef(isSleeping);
+  useEffect(() => {
+    if (prev_isSleeping.current === true && isSleeping === false) {
+      setIsTalking(true);
+      const opening_statement = "Xin chào, tôi có thể giúp gì cho bạn.";
+      const utterance = new SpeechSynthesisUtterance(opening_statement);
+      utterance.lang = 'vi-VN';
+
+      utterance.onstart = () => {
+        setIsTalking(true);
+      };
+  
+      utterance.onend = () => {
+        setIsTalking(false);
+      };
+
+      window.speechSynthesis.speak(utterance);  
+    }
+
+    prev_isSleeping.current = isSleeping;
+  }, [isSleeping]);
 
   // automatically scroll to bottom of chat
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -150,14 +178,6 @@ const Chat = ({
   // textCreated - create new assistant message
   const handleTextCreated = () => {
     appendMessage("assistant", "");
-  };
-
-  // voice output
-  let accumulatedText = ""; 
-  let timeoutId = null;
-
-  const isCompleteSentence = (text) => {  
-    return /[.!?]\s*$/.test(text);
   };
 
   // textDelta - append text to last assistant message
@@ -293,6 +313,10 @@ const Chat = ({
     });
     
   }
+
+  const isCompleteSentence = (text) => {  
+    return /[.!?]\s*$/.test(text);
+  };
 
   const handleSpeechText = (text: string) => {
     setUserInput(text);

@@ -10,6 +10,7 @@ import FileViewer from "../../components/file-viewer";
 const FunctionCalling = () => {
   const [isListening, setIsListening] = useState(false);
   const [isTalking, setIsTalking] = useState(false);
+  const [isSleeping, setIsSleeping] = useState(true);
   const [weatherData, setWeatherData] = useState({});
 
   const functionCallHandler = async (call) => {
@@ -54,6 +55,7 @@ const FunctionCalling = () => {
               functionCallHandler={functionCallHandler}
               isListening={isListening}
               isTalking={isTalking}
+              isSleeping={isSleeping}
               setIsListening={setIsListening}
               setIsTalking={setIsTalking}
             />
