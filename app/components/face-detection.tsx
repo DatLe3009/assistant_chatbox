@@ -17,7 +17,7 @@ const FaceDetection = ({setIsSleeping}) => {
 
     // Khởi động camera
     const startVideo = () => {
-      navigator.mediaDevices.getUserMedia({ video: {} })
+      navigator.mediaDevices.getUserMedia({ video: {width: 1280, height: 720, frameRate: { ideal: 30 }} })
         .then(stream => {
           videoRef.current.srcObject = stream;
         })
@@ -58,7 +58,7 @@ const FaceDetection = ({setIsSleeping}) => {
                 timeoutRef.current = setTimeout(() => {
                   setIsSleeping(true);
                   timeoutRef.current = null;
-            }, 3000);
+            }, 10000);
             }  
         }
       }, 100);
