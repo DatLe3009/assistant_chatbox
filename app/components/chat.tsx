@@ -8,6 +8,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 
 import SpeechInput from './speechInput';
+import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
 
 // @ts-expect-error - no types for this yet
 import { AssistantStreamEvent } from "openai/resources/beta/assistants/assistants";
@@ -80,32 +81,23 @@ const Chat = ({
   const [inputDisabled, setInputDisabled] = useState(false);
   const [threadId, setThreadId] = useState("");
 
+  const [isChatting, setIsChatting] = useState(false);
+
   // voice output
-  let timeoutId = null;
+  const timeoutId = useRef(null);
   let accumulatedText = ""; 
  
-  // openning statement when isUserDetected: flase => true
-  const prev_isUserDetected = useRef(isUserDetected);
+  // Tự động reset trạng thái nếu không có người trong 10 giây
   useEffect(() => {
-    if (prev_isUserDetected.current === false && isUserDetected === true) {
-      setIsTalking(true);
-      const opening_statement = "Xin chào, tôi có thể giúp gì cho bạn.";
-      const utterance = new SpeechSynthesisUtterance(opening_statement);
-      utterance.lang = 'vi-VN';
-
-      utterance.onstart = () => {
-        setIsTalking(true);
-      };
-  
-      utterance.onend = () => {
-        setIsTalking(false);
-      };
-
-      window.speechSynthesis.speak(utterance);  
+    let timeout;
+    if (!isUserDetected && isChatting && !isTalking) {
+      timeout = setTimeout(() => {
+        setIsChatting(false);
+        setMessages([]); // Xóa lịch sử chat
+      }, 10000);
     }
-
-    prev_isUserDetected.current = isUserDetected;
-  }, [isUserDetected]);
+    return () => clearTimeout(timeout); // Dọn dẹp timeout
+  }, [isUserDetected, isChatting]);
 
   // automatically scroll to bottom of chat
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -191,22 +183,30 @@ const Chat = ({
     }
 
     // voice output
-    if (timeoutId) {
-      clearTimeout(timeoutId);
+    if (timeoutId.current) {
+      clearTimeout(timeoutId.current);
     }
-    timeoutId = setTimeout(() => {
+    timeoutId.current = setTimeout(() => {
       if (accumulatedText && isCompleteSentence(accumulatedText)) {
         setIsTalking(true);
         const utterance = new SpeechSynthesisUtterance(accumulatedText);
         utterance.lang = 'vi-VN';
 
+        stop();
+        console.log("Dừng lắng nghe để robot nói")
         utterance.onstart = () => {
           setIsTalking(true);
         };
     
         utterance.onend = () => {
+          console.log("Robot đã nói xong, khởi động lại lắng nghe...");
           setIsTalking(false);
-          accumulatedText = "";
+          
+          // Đảm bảo khởi động lại nhận diện giọng nói
+          if (!isListening) {
+            start();
+            setIsListening(true);
+          }
         };
 
         window.speechSynthesis.speak(utterance);
@@ -318,9 +318,70 @@ const Chat = ({
     return /[.!?]\s*$/.test(text);
   };
 
-  const handleSpeechText = (text: string) => {
-    setUserInput(text);
+  const handleSpeechText = (userInput: string) => {
+    // setUserInput(text);
+    console.log("Nhận giọng nói:", userInput);
+    if (!isChatting && userInput.toLowerCase() === "xin chào robot") {
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { role: "user", text: userInput },
+      ]);
+
+      const opening_statement = "Xin chào, tôi có thể giúp gì cho bạn.";
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { role: "assistant", text: opening_statement },
+      ]);
+      setIsTalking(true);
+      const utterance = new SpeechSynthesisUtterance(opening_statement);
+      utterance.lang = 'vi-VN';
+
+      stop();
+      console.log("Dừng lắng nghe để robot nói câu mở đầu");
+      utterance.onstart = () => {
+        setIsTalking(true);
+      };
+  
+      utterance.onend = () => {
+        setIsTalking(false);
+        start();
+        console.log("Lắng nghe trở lại sau câu mở đầu");
+      };
+
+      window.speechSynthesis.speak(utterance);  
+      setIsChatting(true);
+    } else if (isChatting) {
+      if (!userInput.trim()) return;
+      sendMessage(userInput);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { role: "user", text: userInput },
+      ]);
+      setUserInput("");
+      setInputDisabled(true);
+      scrollToBottom();
+    }
   };
+
+  const { start, stop } = useSpeechRecognition(handleSpeechText, isListening, setIsListening, isTalking, setIsTalking);
+
+  // Bật micro khi phát hiện người
+  useEffect(() => {
+    if (isUserDetected) {
+      if (!isListening && !isTalking) {
+        start(); // Bắt đầu lắng nghe
+      }
+    } else {
+      if (isListening) {
+        stop(); // Dừng lắng nghe
+      }
+      // if (isTalking) {
+      //   window.speechSynthesis.cancel(); // Dừng nói nếu không có người
+      // }
+    }
+  }, [isUserDetected, isListening, isTalking]);
+  
+
 
   return (
     <div className={styles.chatContainer}>
@@ -349,7 +410,7 @@ const Chat = ({
           >
             <FontAwesomeIcon icon={faPaperPlane} size="lg"/>
           </button>
-          <SpeechInput onReceiveText={handleSpeechText} isListening={isListening} setIsListening={setIsListening}/>
+          {/* <SpeechInput onReceiveText={handleSpeechText} isListening={isListening} setIsListening={setIsListening}/> */}
         </div>
       </form>
     </div>
