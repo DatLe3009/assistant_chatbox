@@ -64,7 +64,7 @@ type ChatProps = {
   setIsTalking: (talking: boolean) => void;
   isListening: boolean;
   isTalking: boolean;
-  isSleeping: boolean;  
+  isUserDetected: boolean;  
 };
 
 const Chat = ({
@@ -73,7 +73,7 @@ const Chat = ({
   setIsTalking,
   isListening,
   isTalking,
-  isSleeping,
+  isUserDetected,
 }: ChatProps) => {
   const [userInput, setUserInput] = useState("");
   const [messages, setMessages] = useState([]);
@@ -84,10 +84,10 @@ const Chat = ({
   let timeoutId = null;
   let accumulatedText = ""; 
  
-  // openning statement when isSleeping: true => false
-  const prev_isSleeping = useRef(isSleeping);
+  // openning statement when isUserDetected: flase => true
+  const prev_isUserDetected = useRef(isUserDetected);
   useEffect(() => {
-    if (prev_isSleeping.current === true && isSleeping === false) {
+    if (prev_isUserDetected.current === false && isUserDetected === true) {
       setIsTalking(true);
       const opening_statement = "Xin chào, tôi có thể giúp gì cho bạn.";
       const utterance = new SpeechSynthesisUtterance(opening_statement);
@@ -104,8 +104,8 @@ const Chat = ({
       window.speechSynthesis.speak(utterance);  
     }
 
-    prev_isSleeping.current = isSleeping;
-  }, [isSleeping]);
+    prev_isUserDetected.current = isUserDetected;
+  }, [isUserDetected]);
 
   // automatically scroll to bottom of chat
   const messagesEndRef = useRef<HTMLDivElement | null>(null);

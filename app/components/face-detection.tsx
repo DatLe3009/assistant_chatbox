@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as faceapi from 'face-api.js';
 
-const FaceDetection = ({setIsSleeping}) => {
+const FaceDetection = ({setIsUserDetected}) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -45,7 +45,7 @@ const FaceDetection = ({setIsSleeping}) => {
         // faceapi.draw.drawDetections(canvasRef.current, resizedDetections);
 
         if (detections.length > 0) {
-            setIsSleeping(false);
+            setIsUserDetected(true);
 
             // Nếu đã có timeout đang đếm ngược để chuyển sang "Không có người", hủy nó
             if (timeoutRef.current) {
@@ -56,7 +56,7 @@ const FaceDetection = ({setIsSleeping}) => {
             // Chỉ khi không có khuôn mặt, bắt đầu hẹn giờ đợi 10s để chuyển trạng thái
             if (!timeoutRef.current) {
                 timeoutRef.current = setTimeout(() => {
-                  setIsSleeping(true);
+                  setIsUserDetected(false);
                   timeoutRef.current = null;
             }, 10000);
             }  

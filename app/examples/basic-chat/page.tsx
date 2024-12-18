@@ -12,7 +12,7 @@ import FaceDetection from "../../components/face-detection";
 const Home = () => {
   const [isListening, setIsListening] = useState(false);
   const [isTalking, setIsTalking] = useState(false);
-  const [isSleeping, setIsSleeping] = useState(true);
+  const [isUserDetected, setIsUserDetected] = useState(false);
 
   return (
     <main className={styles.main}>
@@ -21,10 +21,10 @@ const Home = () => {
           <RobotViewer 
             isListening={isListening}
             isTalking={isTalking}
-            isSleeping={isSleeping}
+            isUserDetected={isUserDetected}
           />
           <FaceDetection
-            setIsSleeping={setIsSleeping} 
+            setIsUserDetected={setIsUserDetected} 
           />
         </div>
         <div className={styles.chatContainer}>
@@ -32,7 +32,7 @@ const Home = () => {
             <Chat 
               isListening={isListening}
               isTalking={isTalking}
-              isSleeping={isSleeping}
+              isUserDetected={isUserDetected}
               setIsListening={setIsListening}
               setIsTalking={setIsTalking}
             />
