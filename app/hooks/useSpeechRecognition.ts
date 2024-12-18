@@ -72,5 +72,5 @@ export const useSpeechRecognition = (onCommand, isListening, setIsListening, isT
         }
     };
 
-    return { start, stop };
+    return { start, stop, recognition };
 };

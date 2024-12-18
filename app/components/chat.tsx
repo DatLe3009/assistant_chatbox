@@ -192,7 +192,11 @@ const Chat = ({
         const utterance = new SpeechSynthesisUtterance(accumulatedText);
         utterance.lang = 'vi-VN';
 
-        stop();
+        // stop();
+        if (recognition.current) {
+          recognition.current.abort(); // Dừng ngay lập tức
+        }
+      
         console.log("Dừng lắng nghe để robot nói")
         utterance.onstart = () => {
           setIsTalking(true);
@@ -363,7 +367,7 @@ const Chat = ({
     }
   };
 
-  const { start, stop } = useSpeechRecognition(handleSpeechText, isListening, setIsListening, isTalking, setIsTalking);
+  const { start, stop, recognition } = useSpeechRecognition(handleSpeechText, isListening, setIsListening, isTalking, setIsTalking);
 
   // Bật micro khi phát hiện người
   useEffect(() => {
