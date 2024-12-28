@@ -81,6 +81,8 @@ const Chat = ({
   const [inputDisabled, setInputDisabled] = useState(false);
   const [threadId, setThreadId] = useState("");
 
+  const [topic, setTopic] = useState(null); // topic: subject, rules, schedule
+
   const [isChatting, setIsChatting] = useState(false);
 
   // Tự động reset trạng thái nếu không có người trong 10 giây
@@ -116,13 +118,14 @@ const Chat = ({
     createThread();
   }, []);
 
-  const sendMessage = async (text) => {
+  const sendMessage = async (text, topic) => {
     const response = await fetch(
       `/api/assistants/threads/${threadId}/messages`,
       {
         method: "POST",
         body: JSON.stringify({
           content: text,
+          topic: topic
         }),
       }
     );
@@ -151,7 +154,7 @@ const Chat = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!userInput.trim()) return;
-    sendMessage(userInput);
+    sendMessage(userInput, topic);
     setMessages((prevMessages) => [
       ...prevMessages,
       { role: "user", text: userInput },
@@ -293,23 +296,52 @@ const Chat = ({
         { role: "user", text: userInput },
       ]);
 
-      const opening_statement = "Xin chào, tôi có thể giúp gì cho bạn.";
+      const opening_statement = "Xin chào, bạn muốn hỏi về nội dung môn học, nội quy, hay thời khóa biểu?";
       setMessages((prevMessages) => [
         ...prevMessages,
         { role: "assistant", text: opening_statement },
       ]);
       speakText(opening_statement);
       setIsChatting(true);
-    } else if (isChatting) {
-      if (!userInput.trim()) return;
-      sendMessage(userInput);
+    } else if (isChatting && !topic) {
+      let statement: string = null;
+      if (userInput.toLowerCase().includes("nội dung môn học")) {
+        setTopic("subject");
+        statement = "Bạn đã chọn nội dung môn học. Hãy đặt câu hỏi.";
+      } else if (userInput.toLowerCase().includes("nội quy")) {
+        setTopic("rules");
+        statement = "Bạn đã chọn nội quy. Hãy đặt câu hỏi.";
+      } else if (userInput.toLowerCase().includes("thời khóa biểu")) {
+        setTopic("schedule");
+        statement = "Bạn đã chọn thời khóa biểu. Hãy đặt câu hỏi.";
+      } else {
+        statement = "Xin lỗi, tôi không hiểu. Bạn có thể chọn nội dung môn học, nội quy, hoặc thời khóa biểu.";
+      }
       setMessages((prevMessages) => [
         ...prevMessages,
-        { role: "user", text: userInput },
+        { role: "assistant", text: statement },
       ]);
-      setUserInput("");
-      setInputDisabled(true);
-      scrollToBottom();
+      speakText(statement);
+    } else if (isChatting && topic) {
+      if (userInput.toLowerCase() === "đổi chủ đề") {
+        setTopic(null);
+        let statement = "Bạn muốn hỏi về nội dung môn học, nội quy, hay thời khóa biểu?";
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { role: "assistant", text: statement },
+        ]);
+        speakText(statement);
+      } else {
+        if (!userInput.trim()) return;
+        sendMessage(userInput, topic);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { role: "user", text: userInput },
+        ]);
+        setUserInput("");
+        setInputDisabled(true);
+        scrollToBottom();
+      }
     }
   };
 
