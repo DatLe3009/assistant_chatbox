@@ -6,7 +6,7 @@ declare global {
       webkitSpeechRecognition: any;
     }
 }
-export const useSpeechRecognition = (onCommand, isListening, setIsListening, isTalking, setIsTalking) => {
+export const useSpeechRecognition = (onCommand, setIsListening, isListening, setIsTalking, isTalking) => {
     const recognition = useRef(null);
 
     useEffect(() => {
@@ -29,7 +29,7 @@ export const useSpeechRecognition = (onCommand, isListening, setIsListening, isT
         };
 
         recognition.current.onerror = (event) => {
-            console.error("Lỗi nhận diện giọng nói:", event.error);
+            console.warn("Lỗi nhận diện giọng nói:", event.error);
         };
 
         recognition.current.onstart = () => {
@@ -38,39 +38,38 @@ export const useSpeechRecognition = (onCommand, isListening, setIsListening, isT
 
         recognition.current.onend = () => {
             console.log("Speech recognition đã kết thúc");
-            if (!isTalking && isListening) {
-              console.log("Khởi động lại SpeechRecognition...");
-              recognition.current?.start(); // Khởi động lại
-            } else {
-              setIsListening(false); // Cập nhật trạng thái nếu không cần lắng nghe
-            }
+            setIsListening(false); // Cập nhật trạng thái nếu không cần lắng nghe
+            
         };
     
         return () => recognition.current?.stop(); // Dừng nhận diện khi component unmount
-    }, [onCommand, isListening, setIsListening, isTalking]);
+    }, [onCommand, setIsListening]);
 
     // Hàm điều khiển
-    const start = () => {
+    const startListening = () => {
         if (recognition.current && !isTalking) {
             try {
                 console.log("Bắt đầu lắng nghe...");
                 recognition.current.start();
-                setIsListening(true);
             } catch (error) {
-                console.error("Lỗi khi khởi động lại nhận diện:", error);
+                console.warn("Lỗi khi khởi động lại nhận diện:", error);
                 recognition.current.stop();
                 setTimeout(() => recognition.current.start(), 500); // Khởi động lại sau 500ms
             }
         }
     };
 
-    const stop = () => {
+    const stopListening = () => {
         if (recognition.current && isListening) {
             console.log("Dừng lắng nghe");
             recognition.current.stop();
-            setIsListening(false);
+
+            recognition.current.onend = () => {
+                setIsListening(false); // Đồng bộ trạng thái
+                console.log("Đã dừng lắng nghe hoàn toàn.");
+            };
         }
     };
 
-    return { start, stop, recognition };
+    return { startListening, stopListening };
 };
