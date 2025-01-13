@@ -18,11 +18,11 @@ const Home = () => {
     <main className={styles.main}>
       <div className={styles.container}>
         <div className={styles.column}>
-          <RobotViewer 
+          {/* <RobotViewer 
             isListening={isListening}
             isTalking={isTalking}
             isUserDetected={isUserDetected}
-          />
+          /> */}
           <FaceDetection
             setIsUserDetected={setIsUserDetected} 
           />
