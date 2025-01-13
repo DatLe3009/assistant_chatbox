@@ -9,6 +9,7 @@ import { faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 
 import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
 import { useSpeechSynthesis } from "../hooks/useSpeechSynthesis";
+import { useTextToSpeech } from "../hooks/useTextToSpeech";
 
 // @ts-expect-error - no types for this yet
 import { AssistantStreamEvent } from "openai/resources/beta/assistants/assistants";
@@ -346,7 +347,8 @@ const Chat = ({
   };
 
   const { startListening, stopListening } = useSpeechRecognition(handleSpeechText, setIsListening, isListening, setIsTalking, isTalking);
-  const { speakText } = useSpeechSynthesis(isListening, setIsTalking, startListening, stopListening);
+  // const { speakText } = useSpeechSynthesis(isListening, setIsTalking, startListening, stopListening);
+  const { speakText } = useTextToSpeech(isListening, setIsTalking, startListening, stopListening);
 
   // Bật micro khi phát hiện người
   useEffect(() => {
