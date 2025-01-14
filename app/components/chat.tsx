@@ -292,7 +292,7 @@ const Chat = ({
 
   const handleSpeechText = (userInput: string) => {
     console.log("Nhận giọng nói:", userInput);
-    if (!isChatting && userInput.toLowerCase() === "xin chào robot") {
+    if (!isChatting && userInput.toLowerCase().includes("xin chào robot")) {
       setMessages((prevMessages) => [
         ...prevMessages,
         { role: "user", text: userInput },
