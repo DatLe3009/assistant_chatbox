@@ -66,7 +66,7 @@ type ChatProps = {
   setIsTalking: (talking: boolean) => void;
   isListening: boolean;
   isTalking: boolean;
-  isUserDetected: boolean;  
+  // isUserDetected: boolean;  
 };
 
 const Chat = ({
@@ -75,7 +75,7 @@ const Chat = ({
   setIsTalking,
   isListening,
   isTalking,
-  isUserDetected,
+  // isUserDetected,
 }: ChatProps) => {
   const [userInput, setUserInput] = useState("");
   const [messages, setMessages] = useState([]);
@@ -84,19 +84,20 @@ const Chat = ({
 
   const [topic, setTopic] = useState(null); // topic: subject, rules, schedule
 
+  const [isVoiceDetected, setIsVoiceDetected] = useState(false);
   const [isChatting, setIsChatting] = useState(false);
 
-  // Tự động reset trạng thái nếu không có người trong 10 giây
+  // Tự động reset trạng thái nếu không có âm thanh trong 60 + 10 giây
   useEffect(() => {
     let timeout;
-    if (!isUserDetected && isChatting && !isTalking) {
+    if (!isVoiceDetected && isChatting && !isTalking) {
       timeout = setTimeout(() => {
         setIsChatting(false);
         setMessages([]); // Xóa lịch sử chat
       }, 10000);
     }
     return () => clearTimeout(timeout); // Dọn dẹp timeout
-  }, [isUserDetected, isChatting]);
+  }, [isVoiceDetected, isChatting]);
 
   // automatically scroll to bottom of chat
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -346,22 +347,16 @@ const Chat = ({
     }
   };
 
-  const { startListening, stopListening } = useSpeechRecognition(handleSpeechText, setIsListening, isListening, setIsTalking, isTalking);
+  const { startListening, stopListening } = useSpeechRecognition(handleSpeechText, setIsListening, isListening, setIsTalking, isTalking, setIsVoiceDetected);
   // const { speakText } = useSpeechSynthesis(isListening, setIsTalking, startListening, stopListening);
   const { speakText } = useTextToSpeech(isListening, setIsTalking, startListening, stopListening);
 
-  // Bật micro khi phát hiện người
+  // Luôn bật lại micro
   useEffect(() => {
-    if (isUserDetected) {
       if (!isListening && !isTalking) {
         startListening(); // Bắt đầu lắng nghe
       }
-    } else {
-      if (isListening) {
-        stopListening(); // Dừng lắng nghe
-      }
-    }
-  }, [isUserDetected, isListening, isTalking, startListening]);
+  }, [isListening, isTalking, startListening]);
   
 
 

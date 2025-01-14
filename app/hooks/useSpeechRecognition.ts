@@ -6,8 +6,9 @@ declare global {
       webkitSpeechRecognition: any;
     }
 }
-export const useSpeechRecognition = (onCommand, setIsListening, isListening, setIsTalking, isTalking) => {
+export const useSpeechRecognition = (onCommand, setIsListening, isListening, setIsTalking, isTalking, setIsVoiceDetected) => {
     const recognition = useRef(null);
+    const silenceTimeoutRef = useRef(null);
 
     useEffect(() => {
         if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
@@ -22,10 +23,15 @@ export const useSpeechRecognition = (onCommand, setIsListening, isListening, set
 
         // Callback khi có kết quả nhận diện
         recognition.current.onresult = (event) => {
-            console.log("Kết quả nhận diện:", event.results);
-            const transcript = event.results[event.results.length - 1][0].transcript.trim();
-            console.log("Transcript:", transcript);
-            onCommand(transcript); // Gửi dữ liệu về callback
+            setIsVoiceDetected(true);
+            if (!isTalking) {
+                console.log("Kết quả nhận diện:", event.results);
+                const transcript = event.results[event.results.length - 1][0].transcript.trim();
+                console.log("Transcript:", transcript);
+                onCommand(transcript); // Gửi dữ liệu về callback
+            } else {
+                console.log("robot đang nói không nhận diện kết quả");
+            }
         };
 
         recognition.current.onerror = (event) => {
@@ -51,6 +57,12 @@ export const useSpeechRecognition = (onCommand, setIsListening, isListening, set
             try {
                 console.log("Bắt đầu lắng nghe...");
                 recognition.current.start();
+
+                if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
+                silenceTimeoutRef.current = setTimeout(() => {
+                    console.log("Không có tín hiệu, dừng microphone...");
+                    setIsVoiceDetected(false);
+                }, 60000); // Dừng sau 60 giây không có tín hiệu
             } catch (error) {
                 console.warn("Lỗi khi khởi động lại nhận diện:", error);
                 recognition.current.stop();
@@ -63,6 +75,11 @@ export const useSpeechRecognition = (onCommand, setIsListening, isListening, set
         if (recognition.current && isListening) {
             console.log("Dừng lắng nghe");
             recognition.current.stop();
+
+            if (silenceTimeoutRef.current) {
+                clearTimeout(silenceTimeoutRef.current);
+                silenceTimeoutRef.current = null;
+            }
 
             recognition.current.onend = () => {
                 setIsListening(false); // Đồng bộ trạng thái
