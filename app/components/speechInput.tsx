@@ -6,6 +6,7 @@ interface SpeechInputProps {
     onReceiveText: (text: string) => void;
     isListening: boolean;
     setIsListening: (isListening: boolean) => void;
+    isTalking: boolean;
 }
 
 declare global {
@@ -15,7 +16,7 @@ declare global {
     }
 }
 
-const SpeechInput = ({ onReceiveText, isListening, setIsListening }: SpeechInputProps) => {
+const SpeechInput = ({ onReceiveText, isListening, setIsListening, isTalking }: SpeechInputProps) => {
     const startListening = () => {
       if (typeof window !== 'undefined') {  // check client-side
           const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
@@ -45,7 +46,7 @@ const SpeechInput = ({ onReceiveText, isListening, setIsListening }: SpeechInput
   
     return (
       <div>
-        <button type="button" className={styles.button} onClick={startListening} disabled={isListening}>
+        <button type="button" className={styles.button} onClick={startListening} disabled={isListening || isTalking}>
         <FontAwesomeIcon icon={isListening? faStopCircle: faMicrophone} size="lg"/>
         </button>
       </div>

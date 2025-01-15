@@ -30,14 +30,14 @@ export const useTextToSpeech = (
 
                 // Khi âm thanh kết thúc, khởi động lại ghi âm
                 audio.onended = () => {
-                    console.log("Kết thúc phát âm thanh, khởi động lại ghi âm...");
+                    // console.log("Kết thúc phát âm thanh, khởi động lại ghi âm...");
                     setIsTalking(false); // Ngừng nói
-                    startListening(); // Bắt đầu ghi âm lại
+                    // startListening(); // Bắt đầu ghi âm lại
                 };
             }).catch(err => {
                 console.error("Lỗi khi phát âm thanh:", err);
                 // Khởi động lại ghi âm nếu có lỗi
-                startListening();
+                // startListening();
             });
         } catch (error) {
             console.error('Error calling OpenAI API:', error);

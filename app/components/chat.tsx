@@ -14,6 +14,7 @@ import { useTextToSpeech } from "../hooks/useTextToSpeech";
 // @ts-expect-error - no types for this yet
 import { AssistantStreamEvent } from "openai/resources/beta/assistants/assistants";
 import { RequiredActionFunctionToolCall } from "openai/resources/beta/threads/runs/runs";
+import SpeechInput from "./speechInput";
 
 type MessageProps = {
   role: "user" | "assistant" | "code";
@@ -88,16 +89,16 @@ const Chat = ({
   const [isChatting, setIsChatting] = useState(false);
 
   // Tự động reset trạng thái nếu không có âm thanh trong 60 + 10 giây
-  useEffect(() => {
-    let timeout;
-    if (!isVoiceDetected && isChatting && !isTalking) {
-      timeout = setTimeout(() => {
-        setIsChatting(false);
-        setMessages([]); // Xóa lịch sử chat
-      }, 10000);
-    }
-    return () => clearTimeout(timeout); // Dọn dẹp timeout
-  }, [isVoiceDetected, isChatting]);
+  // useEffect(() => {
+  //   let timeout;
+  //   if (!isVoiceDetected && isChatting && !isTalking) {
+  //     timeout = setTimeout(() => {
+  //       setIsChatting(false);
+  //       setMessages([]); // Xóa lịch sử chat
+  //     }, 10000);
+  //   }
+  //   return () => clearTimeout(timeout); // Dọn dẹp timeout
+  // }, [isVoiceDetected, isChatting]);
 
   // automatically scroll to bottom of chat
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -351,12 +352,12 @@ const Chat = ({
   // const { speakText } = useSpeechSynthesis(isListening, setIsTalking, startListening, stopListening);
   const { speakText } = useTextToSpeech(isListening, setIsTalking, startListening, stopListening);
 
-  // Luôn bật lại micro
-  useEffect(() => {
-      if (!isListening && !isTalking) {
-        startListening(); // Bắt đầu lắng nghe
-      }
-  }, [isListening, isTalking, startListening]);
+  // // Luôn bật lại micro
+  // useEffect(() => {
+  //     if (!isListening && !isTalking) {
+  //       startListening(); // Bắt đầu lắng nghe
+  //     }
+  // }, [isListening, isTalking, startListening]);
   
 
 
@@ -387,7 +388,7 @@ const Chat = ({
           >
             <FontAwesomeIcon icon={faPaperPlane} size="lg"/>
           </button>
-          {/* <SpeechInput onReceiveText={handleSpeechText} isListening={isListening} setIsListening={setIsListening}/> */}
+          <SpeechInput onReceiveText={handleSpeechText} isListening={isListening} setIsListening={setIsListening} isTalking={isTalking}/>
         </div>
       </form>
     </div>
