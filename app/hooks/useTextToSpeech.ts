@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import md5 from 'md5';
 
 export const useTextToSpeech = (
     listening, 
@@ -9,7 +10,7 @@ export const useTextToSpeech = (
 ) => {
     const [currentAudio, setCurrentAudio] = useState(null); 
 
-    const speakText = async (text: string) => {
+    const speakText = async (text: string, isKey: boolean = false) => {
         if (listening) handleStopListening();
 
         try {
@@ -18,18 +19,63 @@ export const useTextToSpeech = (
                 currentAudio.currentTime = 0; // Đặt lại thời gian phát
             }
 
-            const response = await fetch('/api/tts', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ content: text }), // Gửi nội dung văn bản
-            });
+            let audioUrl: string;
 
-            if (!response.ok) throw new Error("Failed to generate audio");
-
-            const audioBlob = await response.blob();
-            const audioUrl = URL.createObjectURL(audioBlob);
+            if (isKey) {
+                // Tạo tên tệp bằng hash (md5)
+                const fileName = `${md5(text)}.mp3`;
+                const audioPath = `/audio/${fileName}`;
+                
+                // Kiểm tra nếu tệp đã tồn tại trong public/audio
+                const responseCheck = await fetch(audioPath, { method: 'HEAD' });
+                if (responseCheck.ok) {
+                    // Tệp tồn tại, sử dụng đường dẫn cũ
+                    audioUrl = audioPath;
+                } else {
+                    // Tệp không tồn tại, yêu cầu API để tạo
+                    const response = await fetch('/api/tts', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ content: text }),
+                    });
+    
+                    if (!response.ok) throw new Error('Failed to generate audio');
+    
+                    const audioBlob = await response.blob();
+    
+                    // Gửi audioBlob và fileName đến API /api/save-audio để lưu
+                    const saveResponse = await fetch('/api/save-audio', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            fileName,
+                            audioBlob: await audioBlob.arrayBuffer().then(buffer => Buffer.from(buffer).toString('base64')), // Chuyển blob sang base64
+                        }),
+                    });
+    
+                    if (!saveResponse.ok) throw new Error('Failed to save audio file');
+    
+                    audioUrl = audioPath;
+                }
+            } else {
+                // Không phải isKey, gọi API TTS để phát âm thanh trực tiếp
+                const response = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ content: text }),
+                });
+    
+                if (!response.ok) throw new Error('Failed to generate audio');
+    
+                const audioBlob = await response.blob();
+                audioUrl = URL.createObjectURL(audioBlob);
+            }
 
             const audio = new Audio(audioUrl);
             setCurrentAudio(audio); // Lưu âm thanh hiện tại vào state

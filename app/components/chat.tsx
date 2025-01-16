@@ -345,7 +345,7 @@ const Chat = ({
         ...prevMessages,
         { role: "assistant", text: opening_statement },
       ]);
-      await speakText(opening_statement); // Phát âm thanh
+      await speakText(opening_statement, true); // Phát âm thanh
       setIsChatting(true);
     } else if (isChatting && !topic) {
       let statement: string = null;
@@ -366,7 +366,7 @@ const Chat = ({
         { role: "assistant", text: statement },
       ]);
 
-      await speakText(statement); // Phát âm thanh
+      await speakText(statement, true); // Phát âm thanh
     } else if (isChatting && topic) {
       if (userInput.toLowerCase() === "đổi chủ đề") {
         setTopic(null);
@@ -375,7 +375,7 @@ const Chat = ({
           ...prevMessages,
           { role: "assistant", text: statement },
         ]);
-        await speakText(statement); // Phát âm thanh
+        await speakText(statement, true); // Phát âm thanh
       } else {
         if (!userInput.trim()) return;
         await sendMessage(userInput, topic);
