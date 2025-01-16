@@ -10,8 +10,7 @@ import FaceDetection from "../../components/face-detection";
 
 
 const Home = () => {
-  const [isListening, setIsListening] = useState(false);
-  const [isTalking, setIsTalking] = useState(false);
+
   // const [isUserDetected, setIsUserDetected] = useState(false);
 
   return (
@@ -30,11 +29,7 @@ const Home = () => {
         <div className={styles.chatContainer}>
           <div className={styles.chat}>
             <Chat 
-              isListening={isListening}
-              isTalking={isTalking}
               // isUserDetected={isUserDetected}
-              setIsListening={setIsListening}
-              setIsTalking={setIsTalking}
             />
           </div>
         </div>

@@ -6,8 +6,6 @@ import Chat from "../../components/chat";
 import FileViewer from "../../components/file-viewer";
 
 const FileSearchPage = () => {
-  const [isListening, setIsListening] = useState(false);
-  const [isTalking, setIsTalking] = useState(false);
   // const [isUserDetected, setIsUserDetected] = useState(false);
 
   return (
@@ -18,12 +16,8 @@ const FileSearchPage = () => {
         </div>
         <div className={styles.chatContainer}>
           <div className={styles.chat}>
-            <Chat 
-                isListening={isListening}
-                isTalking={isTalking}
-                // isUserDetected={isUserDetected}
-                setIsListening={setIsListening}
-                setIsTalking={setIsTalking}
+            <Chat        
+              // isUserDetected={isUserDetected}  
             />
           </div>
         </div>

@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import 'regenerator-runtime/runtime'; // Thêm dòng này
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import styles from "./chat.module.css";
 import { AssistantStream } from "openai/lib/AssistantStream";
 import Markdown from "react-markdown";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 
-import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
-import { useSpeechSynthesis } from "../hooks/useSpeechSynthesis";
 import { useTextToSpeech } from "../hooks/useTextToSpeech";
 
 // @ts-expect-error - no types for this yet
@@ -63,19 +63,11 @@ type ChatProps = {
   functionCallHandler?: (
     toolCall: RequiredActionFunctionToolCall
   ) => Promise<string>;
-  setIsListening: (listening: boolean) => void;
-  setIsTalking: (talking: boolean) => void;
-  isListening: boolean;
-  isTalking: boolean;
   // isUserDetected: boolean;  
 };
 
 const Chat = ({
   functionCallHandler = () => Promise.resolve(""), // default to return empty string
-  setIsListening,
-  setIsTalking,
-  isListening,
-  isTalking,
   // isUserDetected,
 }: ChatProps) => {
   const [userInput, setUserInput] = useState("");
@@ -85,20 +77,66 @@ const Chat = ({
 
   const [topic, setTopic] = useState(null); // topic: subject, rules, schedule
 
-  const [isVoiceDetected, setIsVoiceDetected] = useState(false);
   const [isChatting, setIsChatting] = useState(false);
 
-  // Tự động reset trạng thái nếu không có âm thanh trong 60 + 10 giây
+  const {
+    finalTranscript,
+    listening,
+    resetTranscript,
+    browserSupportsSpeechRecognition
+  } = useSpeechRecognition();
+
+  const [processing, setProcessing] = useState(false); // Trạng thái xử lý câu hỏi
+  const [timeoutId, setTimeoutId] = useState(null);
+
+  // Xử lý câu hỏi khi có finalTranscript
+  useEffect(() => {
+    if (finalTranscript && !processing) {
+      resetTranscript(); // Đặt lại transcript sau khi lưu
+      handleQuestionProcessing(finalTranscript);
+      resetTimeout();
+    } else if (finalTranscript && processing) {
+      console.log("đang xử lí không nhận mới:",finalTranscript)
+    }
+  }, [finalTranscript, processing]);
+
+  useEffect(() => {
+    // Tự động bắt đầu ghi âm khi component được mount
+    handleStartListening();
+  }, []); // Chạy một lần khi component được mount
+
+  // Bắt đầu lắng nghe
+  useEffect(() => {
+    console.log("listening: ", listening);
+    console.log("processing: ", processing);
+    if (listening && !processing) {
+      SpeechRecognition.startListening({ continuous: true });
+      resetTimeout();
+    }
+  }, [listening]);
+
+  const resetTimeout = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    const id = setTimeout(() => {
+      setIsChatting(false);
+      setMessages([]); // Xóa lịch sử chat
+    }, 180000); // Set timeout mới 
+    setTimeoutId(id);
+  };
+
+  // Tự động reset trạng thái nếu không có khuôn mặt trong 60 + 10 giây
   // useEffect(() => {
   //   let timeout;
-  //   if (!isVoiceDetected && isChatting && !isTalking) {
+  //   if (!isUserDetected && isChatting) {
   //     timeout = setTimeout(() => {
   //       setIsChatting(false);
   //       setMessages([]); // Xóa lịch sử chat
-  //     }, 10000);
+  //     }, 60000);
   //   }
   //   return () => clearTimeout(timeout); // Dọn dẹp timeout
-  // }, [isVoiceDetected, isChatting]);
+  // }, [isUserDetected, isChatting]);
 
   // automatically scroll to bottom of chat
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -185,9 +223,9 @@ const Chat = ({
   };
 
   //textDone - use  content after done to speak text
-  const handleTextDone = (content, snapshot) => {
+  const handleTextDone = async (content, snapshot) => {
     console.log(content.value);
-    speakText(content.value);
+    await speakText(content.value); // Phát âm thanh
   };
 
   // imageFileDone - show image in chat
@@ -291,7 +329,10 @@ const Chat = ({
     
   }
 
-  const handleSpeechText = (userInput: string) => {
+  const handleQuestionProcessing = async (userInput: string) => {
+    setProcessing(true);
+    // SpeechRecognition.stopListening(); // Dừng ghi âm
+
     console.log("Nhận giọng nói:", userInput);
     if (!isChatting && userInput.toLowerCase().includes("xin chào robot")) {
       setMessages((prevMessages) => [
@@ -304,7 +345,7 @@ const Chat = ({
         ...prevMessages,
         { role: "assistant", text: opening_statement },
       ]);
-      speakText(opening_statement);
+      await speakText(opening_statement); // Phát âm thanh
       setIsChatting(true);
     } else if (isChatting && !topic) {
       let statement: string = null;
@@ -324,7 +365,8 @@ const Chat = ({
         ...prevMessages,
         { role: "assistant", text: statement },
       ]);
-      speakText(statement);
+
+      await speakText(statement); // Phát âm thanh
     } else if (isChatting && topic) {
       if (userInput.toLowerCase() === "đổi chủ đề") {
         setTopic(null);
@@ -333,10 +375,10 @@ const Chat = ({
           ...prevMessages,
           { role: "assistant", text: statement },
         ]);
-        speakText(statement);
+        await speakText(statement); // Phát âm thanh
       } else {
         if (!userInput.trim()) return;
-        sendMessage(userInput, topic);
+        await sendMessage(userInput, topic);
         setMessages((prevMessages) => [
           ...prevMessages,
           { role: "user", text: userInput },
@@ -345,21 +387,28 @@ const Chat = ({
         setInputDisabled(true);
         scrollToBottom();
       }
+    } else {
+      setProcessing(false);
     }
   };
 
-  const { startListening, stopListening } = useSpeechRecognition(handleSpeechText, setIsListening, isListening, setIsTalking, isTalking, setIsVoiceDetected);
-  // const { speakText } = useSpeechSynthesis(isListening, setIsTalking, startListening, stopListening);
-  const { speakText } = useTextToSpeech(isListening, setIsTalking, startListening, stopListening);
-
-  // // Luôn bật lại micro
-  // useEffect(() => {
-  //     if (!isListening && !isTalking) {
-  //       startListening(); // Bắt đầu lắng nghe
-  //     }
-  // }, [isListening, isTalking, startListening]);
   
+  
+  // Kiểm tra hỗ trợ nhận diện giọng nói
+  // if (!browserSupportsSpeechRecognition) {
+  //   return <span>Browser doesn't support speech recognition.</span>;
+  // }
 
+  // Các hàm điều khiển
+  const handleStartListening = () => {
+    SpeechRecognition.startListening({ continuous: true });
+  };
+
+  const handleStopListening = () => {
+    SpeechRecognition.stopListening();
+  };
+
+  const { speakText } = useTextToSpeech(listening, handleStartListening, handleStopListening, resetTranscript, setProcessing);
 
   return (
     <div className={styles.chatContainer}>
@@ -384,11 +433,11 @@ const Chat = ({
           <button
             type="submit"
             className={styles.button}
-            disabled={inputDisabled || isListening || isTalking}
+            disabled={inputDisabled}
           >
             <FontAwesomeIcon icon={faPaperPlane} size="lg"/>
           </button>
-          <SpeechInput onReceiveText={handleSpeechText} isListening={isListening} setIsListening={setIsListening} isTalking={isTalking}/>
+          {/* <SpeechInput onReceiveText={handleQuestionProcessing} isListening={isListening} setIsListening={setIsListening} isTalking={isTalking}/> */}
         </div>
       </form>
     </div>
