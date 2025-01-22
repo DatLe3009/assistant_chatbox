@@ -8,6 +8,7 @@ import { AssistantStream } from "openai/lib/AssistantStream";
 import Markdown from "react-markdown";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+import md5 from 'md5';
 
 import { useTextToSpeech } from "../hooks/useTextToSpeech";
 
@@ -15,6 +16,12 @@ import { useTextToSpeech } from "../hooks/useTextToSpeech";
 import { AssistantStreamEvent } from "openai/resources/beta/assistants/assistants";
 import { RequiredActionFunctionToolCall } from "openai/resources/beta/threads/runs/runs";
 import SpeechInput from "./speechInput";
+
+declare global {
+  interface Window {
+    webkitAudioContext: typeof AudioContext;
+  }
+}
 
 type MessageProps = {
   role: "user" | "assistant" | "code";
@@ -107,8 +114,8 @@ const Chat = ({
 
   // Bắt đầu lắng nghe
   useEffect(() => {
-    console.log("listening: ", listening);
-    console.log("processing: ", processing);
+    // console.log("listening: ", listening);
+    // console.log("processing: ", processing);
     if (listening && !processing) {
       SpeechRecognition.startListening({ continuous: true });
       resetTimeout();
@@ -273,7 +280,6 @@ const Chat = ({
     stream.on("textCreated", handleTextCreated);
     stream.on("textDelta", handleTextDelta);
     stream.on("textDone", handleTextDone);
-
     // image
     stream.on("imageFileDone", handleImageFileDone);
 
@@ -337,7 +343,7 @@ const Chat = ({
     if (!isChatting && userInput.toLowerCase().includes("xin chào robot")) {
       setMessages((prevMessages) => [
         ...prevMessages,
-        { role: "user", text: userInput },
+        { role: "user", text: "xin chào robot" },
       ]);
 
       const opening_statement = "Xin chào, bạn muốn hỏi về nội dung môn học, nội quy, hay thời khóa biểu?";
@@ -408,7 +414,89 @@ const Chat = ({
     SpeechRecognition.stopListening();
   };
 
-  const { speakText } = useTextToSpeech(listening, handleStartListening, handleStopListening, resetTranscript, setProcessing);
+  // option 1
+  // const { speakText } = useTextToSpeech(listening, handleStartListening, handleStopListening, resetTranscript, setProcessing);
+
+
+  // option 2
+  const audioRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const speakText = async (text: string, isKey: boolean = false) => {
+      if (listening) handleStopListening();
+
+      try {
+          const audio = audioRef.current;
+
+          if (!audioContextRef.current) {
+            audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();;
+          }
+
+           if (isKey) {
+              // Tạo tên tệp bằng hash (md5)
+              const fileName = `${md5(text)}.mp3`;
+              const audioPath = `/audio/${fileName}`;
+              
+              // Kiểm tra nếu tệp đã tồn tại trong public/audio
+              const responseCheck = await fetch(audioPath, { method: 'HEAD' });
+              if (responseCheck.ok) {
+                  // Tệp tồn tại, sử dụng đường dẫn cũ
+                  audio.src = `http://localhost:3000${audioPath}`;
+              } else {
+                  // Tệp không tồn tại, yêu cầu API để tạo
+                  const response = await fetch('/api/tts', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({ content: text }),
+                  });
+  
+                  if (!response.ok) throw new Error('Failed to generate audio');
+  
+                  const audioBlob = await response.blob();
+  
+                  // Gửi audioBlob và fileName đến API /api/save-audio để lưu
+                  const saveResponse = await fetch('/api/save-audio', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                          fileName,
+                          audioBlob: await audioBlob.arrayBuffer().then(buffer => Buffer.from(buffer).toString('base64')), // Chuyển blob sang base64
+                      }),
+                  });
+  
+                  if (!saveResponse.ok) throw new Error('Failed to save audio file');
+  
+                  audio.src = `http://localhost:3000${audioPath}`;
+              }
+          } else {
+            audio.src = `http://localhost:3000/api/tts?content=${encodeURIComponent(
+                text
+            )}`;
+          }
+
+
+          audio.play().then(() => {
+              console.log("Đang phát âm thanh...");
+
+              audio.onended = () => {
+                  resetTranscript();
+                  new Promise(resolve => setTimeout(resolve, 100)); // 100ms
+                  handleStartListening();
+                  setProcessing(false);
+
+                  console.log("Kết thúc phát âm thanh, khởi động lại ghi âm...");
+                  // setCurrentAudio(null); // Xóa âm thanh hiện tại khi kết thúc
+              };
+          }).catch(err => {
+              console.error("Lỗi khi phát âm thanh:", err);
+          });
+      } catch (error) {
+          console.error('Error calling OpenAI API:', error);
+      }
+  };
 
   return (
     <div className={styles.chatContainer}>
@@ -440,6 +528,7 @@ const Chat = ({
           {/* <SpeechInput onReceiveText={handleQuestionProcessing} isListening={isListening} setIsListening={setIsListening} isTalking={isTalking}/> */}
         </div>
       </form>
+      <audio ref={audioRef}></audio>
     </div>
   );
 };
