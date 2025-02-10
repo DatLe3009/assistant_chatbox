@@ -122,14 +122,16 @@ const Chat = ({
     }
   }, [listening]);
 
-  const resetTimeout = () => {
+  const resetTimeout = () => {  
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
     const id = setTimeout(() => {
       setIsChatting(false);
+      setTopic(null);
+      speakText("Tạm biệt bạn, tôi sẽ kết thúc cuộc trò chuyện.", true);
       setMessages([]); // Xóa lịch sử chat
-    }, 180000); // Set timeout mới 
+    }, 60000); // Set timeout mới 
     setTimeoutId(id);
   };
 
@@ -340,7 +342,12 @@ const Chat = ({
     // SpeechRecognition.stopListening(); // Dừng ghi âm
 
     console.log("Nhận giọng nói:", userInput);
-    if (!isChatting && userInput.toLowerCase().includes("xin chào robot")) {
+    if (isChatting && userInput.toLowerCase().includes("kết thúc cuộc trò chuyện")) {
+      setIsChatting(false);
+      setTopic(null);
+      speakText("Tạm biệt bạn, tôi sẽ kết thúc cuộc trò chuyện.", true);
+      setMessages([]); // Xóa lịch sử chat    
+    } else if (!isChatting && userInput.toLowerCase().includes("xin chào robot")) {
       setMessages((prevMessages) => [
         ...prevMessages,
         { role: "user", text: "xin chào robot" },
