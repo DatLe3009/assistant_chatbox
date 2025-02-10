@@ -9,6 +9,7 @@ import Markdown from "react-markdown";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 import md5 from 'md5';
+import { connectWebSocket, sendMessageWebSocket } from "../utils/websocket";
 
 import { useTextToSpeech } from "../hooks/useTextToSpeech";
 
@@ -85,6 +86,15 @@ const Chat = ({
   const [topic, setTopic] = useState(null); // topic: subject, rules, schedule
 
   const [isChatting, setIsChatting] = useState(false);
+
+  useEffect(() => {
+      connectWebSocket();
+  }, []);
+
+  // Gui giá tri isChatting den Raspberry Pi moi khi nó thay doi
+  useEffect(() => {
+      sendMessageWebSocket(isChatting ? "on" : "off");
+  }, [isChatting]);
 
   const {
     finalTranscript,
