@@ -11,7 +11,7 @@ export async function POST(request) {
         input: content,
         voice: 'alloy', // Chọn giọng nói
         response_format: 'mp3', // Tùy chọn
-        speed: 1.0 // Tùy chọn
+        speed: 1.5 // Tùy chọn
     });
 
     const audioBuffer = await response.arrayBuffer();
@@ -34,7 +34,7 @@ export async function GET(request) {
         input: content,
         voice: 'alloy', // Chọn giọng nói
         response_format: 'mp3', // Tùy chọn
-        speed: 1.0 // Tùy chọn
+        speed: 1.2 // Tùy chọn
     });
 
     const readableStream = response.body; // Đọc trực tiếp luồng dữ liệu từ OpenAI API.

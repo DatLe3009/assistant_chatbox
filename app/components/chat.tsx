@@ -9,7 +9,7 @@ import Markdown from "react-markdown";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 import md5 from 'md5';
-import { connectWebSocket, sendMessageWebSocket } from "../utils/websocket";
+import { connectControlServer, sendChunkToControlServer, connectTTSServer, sendChunkToTTSServer } from "../utils/websocket";
 
 import { useTextToSpeech } from "../hooks/useTextToSpeech";
 
@@ -88,12 +88,13 @@ const Chat = ({
   const [isChatting, setIsChatting] = useState(false);
 
   useEffect(() => {
-      connectWebSocket();
+    connectControlServer();
+    connectTTSServer(handleAudioStop);
   }, []);
 
   // Gui giá tri isChatting den Raspberry Pi moi khi nó thay doi
   useEffect(() => {
-      sendMessageWebSocket(isChatting ? "on" : "off");
+    sendChunkToControlServer(isChatting ? "on" : "off");
   }, [isChatting]);
 
   const {
@@ -132,16 +133,21 @@ const Chat = ({
     }
   }, [listening]);
 
+  // useEffect(() => {
+  //   console.log("processing: ", processing);
+  // }, [processing]);
+
+
   const resetTimeout = () => {  
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
     const id = setTimeout(() => {
+      if (isChatting) speakText("Tạm biệt bạn, tôi sẽ kết thúc cuộc trò chuyện.", true);
       setIsChatting(false);
       setTopic(null);
-      speakText("Tạm biệt bạn, tôi sẽ kết thúc cuộc trò chuyện.", true);
       setMessages([]); // Xóa lịch sử chat
-    }, 60000); // Set timeout mới 
+    }, 180000); // Set timeout mới 
     setTimeoutId(id);
   };
 
@@ -234,6 +240,7 @@ const Chat = ({
   // textDelta - append text to last assistant message
   const handleTextDelta = (delta) => {
     if (delta.value != null) {
+      sendChunkToTTSServer(delta.value);
       appendToLastMessage(delta.value);
     };
     if (delta.annotations != null) {
@@ -291,7 +298,7 @@ const Chat = ({
     // messages
     stream.on("textCreated", handleTextCreated);
     stream.on("textDelta", handleTextDelta);
-    stream.on("textDone", handleTextDone);
+    // stream.on("textDone", handleTextDone);
     // image
     stream.on("imageFileDone", handleImageFileDone);
 
@@ -424,7 +431,7 @@ const Chat = ({
 
   // Các hàm điều khiển
   const handleStartListening = () => {
-    SpeechRecognition.startListening({ continuous: true });
+    SpeechRecognition.startListening({ continuous: false, interimResults: true, language: 'vi-VN' });
   };
 
   const handleStopListening = () => {
@@ -453,41 +460,43 @@ const Chat = ({
               const fileName = `${md5(text)}.mp3`;
               const audioPath = `/audio/${fileName}`;
               
-              // Kiểm tra nếu tệp đã tồn tại trong public/audio
-              const responseCheck = await fetch(audioPath, { method: 'HEAD' });
-              if (responseCheck.ok) {
-                  // Tệp tồn tại, sử dụng đường dẫn cũ
-                  audio.src = `http://localhost:3000${audioPath}`;
-              } else {
-                  // Tệp không tồn tại, yêu cầu API để tạo
-                  const response = await fetch('/api/tts', {
-                      method: 'POST',
-                      headers: {
-                          'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({ content: text }),
-                  });
+              audio.src = `http://localhost:3000${audioPath}`;
+
+              // // Kiểm tra nếu tệp đã tồn tại trong public/audio
+              // const responseCheck = await fetch(audioPath, { method: 'HEAD' });
+              // if (responseCheck.ok) {
+              //     // Tệp tồn tại, sử dụng đường dẫn cũ
+              //     audio.src = `http://localhost:3000${audioPath}`;
+              // } else {
+              //     // Tệp không tồn tại, yêu cầu API để tạo
+              //     const response = await fetch('/api/tts', {
+              //         method: 'POST',
+              //         headers: {
+              //             'Content-Type': 'application/json',
+              //         },
+              //         body: JSON.stringify({ content: text }),
+              //     });
   
-                  if (!response.ok) throw new Error('Failed to generate audio');
+              //     if (!response.ok) throw new Error('Failed to generate audio');
   
-                  const audioBlob = await response.blob();
+              //     const audioBlob = await response.blob();
   
-                  // Gửi audioBlob và fileName đến API /api/save-audio để lưu
-                  const saveResponse = await fetch('/api/save-audio', {
-                      method: 'POST',
-                      headers: {
-                          'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                          fileName,
-                          audioBlob: await audioBlob.arrayBuffer().then(buffer => Buffer.from(buffer).toString('base64')), // Chuyển blob sang base64
-                      }),
-                  });
+              //     // Gửi audioBlob và fileName đến API /api/save-audio để lưu
+              //     const saveResponse = await fetch('/api/save-audio', {
+              //         method: 'POST',
+              //         headers: {
+              //             'Content-Type': 'application/json',
+              //         },
+              //         body: JSON.stringify({
+              //             fileName,
+              //             audioBlob: await audioBlob.arrayBuffer().then(buffer => Buffer.from(buffer).toString('base64')), // Chuyển blob sang base64
+              //         }),
+              //     });
   
-                  if (!saveResponse.ok) throw new Error('Failed to save audio file');
+              //     if (!saveResponse.ok) throw new Error('Failed to save audio file');
   
-                  audio.src = `http://localhost:3000${audioPath}`;
-              }
+              //     audio.src = `http://localhost:3000${audioPath}`;
+              // }
           } else {
             audio.src = `http://localhost:3000/api/tts?content=${encodeURIComponent(
                 text
@@ -500,10 +509,11 @@ const Chat = ({
 
               audio.onended = () => {
                   resetTranscript();
-                  new Promise(resolve => setTimeout(resolve, 100)); // 100ms
-                  handleStartListening();
-                  setProcessing(false);
-
+                  setTimeout(() => {
+                    handleStartListening();
+                    setProcessing(false);
+                  }, 100); // 100ms
+                  
                   console.log("Kết thúc phát âm thanh, khởi động lại ghi âm...");
                   // setCurrentAudio(null); // Xóa âm thanh hiện tại khi kết thúc
               };
@@ -514,6 +524,15 @@ const Chat = ({
           console.error('Error calling OpenAI API:', error);
       }
   };
+
+  // option 3
+  const handleAudioStop = () => {
+    resetTranscript();
+    setTimeout(() => {
+        handleStartListening();
+        setProcessing(false);
+    }, 100);
+};
 
   return (
     <div className={styles.chatContainer}>
