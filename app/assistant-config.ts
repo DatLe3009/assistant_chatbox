@@ -7,7 +7,8 @@ if (assistantId === "") {
 export const assistants = {
   subject: process.env.OPENAI_SUBJECT_ASSISTANT_ID, // ID của assistant nội dung môn học
   rules: process.env.OPENAI_RULES_ASSISTANT_ID,     // ID của assistant nội quy
-  schedule: process.env.OPENAI_SCHEDULE_ASSISTANT_ID // ID của assistant thời khóa biểu
+  schedule: process.env.OPENAI_SCHEDULE_ASSISTANT_ID, // ID của assistant thời khóa biểu
+  structure: process.env.OPENAI_STRUCTURE_ASSISTANT_ID, // ID của  assistant cơ cấu tổ chức
 };
 
 // Hàm lấy assistantId dựa trên chủ đề

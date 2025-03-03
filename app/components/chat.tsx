@@ -83,13 +83,13 @@ const Chat = ({
   const [inputDisabled, setInputDisabled] = useState(false);
   const [threadId, setThreadId] = useState("");
 
-  const [topic, setTopic] = useState(null); // topic: subject, rules, schedule
+  const [topic, setTopic] = useState(null); // topic: subject, rules, schedule, structure
 
   const [isChatting, setIsChatting] = useState(false);
 
   useEffect(() => {
     connectControlServer();
-    connectTTSServer(handleAudioStop);
+    // connectTTSServer(handleAudioStop);
   }, []);
 
   // Gui giá tri isChatting den Raspberry Pi moi khi nó thay doi
@@ -240,7 +240,7 @@ const Chat = ({
   // textDelta - append text to last assistant message
   const handleTextDelta = (delta) => {
     if (delta.value != null) {
-      sendChunkToTTSServer(delta.value);
+      // sendChunkToTTSServer(delta.value);
       appendToLastMessage(delta.value);
     };
     if (delta.annotations != null) {
@@ -298,7 +298,7 @@ const Chat = ({
     // messages
     stream.on("textCreated", handleTextCreated);
     stream.on("textDelta", handleTextDelta);
-    // stream.on("textDone", handleTextDone);
+    stream.on("textDone", handleTextDone);
     // image
     stream.on("imageFileDone", handleImageFileDone);
 
@@ -359,7 +359,7 @@ const Chat = ({
     // SpeechRecognition.stopListening(); // Dừng ghi âm
 
     console.log("Nhận giọng nói:", userInput);
-    if (isChatting && userInput.toLowerCase().includes("kết thúc cuộc trò chuyện")) {
+    if (isChatting && userInput.toLowerCase().includes("kết thúc")) {
       setIsChatting(false);
       setTopic(null);
       speakText("Tạm biệt bạn, tôi sẽ kết thúc cuộc trò chuyện.", true);
@@ -370,7 +370,7 @@ const Chat = ({
         { role: "user", text: "xin chào robot" },
       ]);
 
-      const opening_statement = "Xin chào, bạn muốn hỏi về nội dung môn học, nội quy, hay thời khóa biểu?";
+      const opening_statement = "Xin chào, bạn muốn hỏi về nội dung môn học, quy chế, cơ cấu tổ chức hay thời khóa biểu?";
       setMessages((prevMessages) => [
         ...prevMessages,
         { role: "assistant", text: opening_statement },
@@ -382,14 +382,17 @@ const Chat = ({
       if (userInput.toLowerCase().includes("nội dung môn học")) {
         setTopic("subject");
         statement = "Bạn đã chọn nội dung môn học. Hãy đặt câu hỏi.";
-      } else if (userInput.toLowerCase().includes("nội quy")) {
+      } else if (userInput.toLowerCase().includes("quy chế")) {
         setTopic("rules");
-        statement = "Bạn đã chọn nội quy. Hãy đặt câu hỏi.";
+        statement = "Bạn đã chọn quy chế. Hãy đặt câu hỏi.";
       } else if (userInput.toLowerCase().includes("thời khóa biểu")) {
         setTopic("schedule");
         statement = "Bạn đã chọn thời khóa biểu. Hãy đặt câu hỏi.";
+      } else if (userInput.toLowerCase().includes("cơ cấu tổ chức")) {
+        setTopic("structure");
+        statement = "Bạn đã chọn cơ cấu tổ chức. Hãy đặt câu hỏi.";
       } else {
-        statement = "Xin lỗi, tôi không hiểu. Bạn có thể chọn nội dung môn học, nội quy, hoặc thời khóa biểu.";
+        statement = "Xin lỗi, tôi không hiểu. Bạn có thể chọn nội dung môn học, quy chế, cơ cấu tổ chức hoặc thời khóa biểu.";
       }
       setMessages((prevMessages) => [
         ...prevMessages,
@@ -400,7 +403,7 @@ const Chat = ({
     } else if (isChatting && topic) {
       if (userInput.toLowerCase() === "đổi chủ đề") {
         setTopic(null);
-        let statement = "Bạn muốn hỏi về nội dung môn học, nội quy, hay thời khóa biểu?";
+        let statement = "Bạn muốn hỏi về nội dung môn học, quy chế, cơ cấu tổ chức hay thời khóa biểu?";
         setMessages((prevMessages) => [
           ...prevMessages,
           { role: "assistant", text: statement },
@@ -462,41 +465,41 @@ const Chat = ({
               
               audio.src = `http://localhost:3000${audioPath}`;
 
-              // // Kiểm tra nếu tệp đã tồn tại trong public/audio
-              // const responseCheck = await fetch(audioPath, { method: 'HEAD' });
-              // if (responseCheck.ok) {
-              //     // Tệp tồn tại, sử dụng đường dẫn cũ
-              //     audio.src = `http://localhost:3000${audioPath}`;
-              // } else {
-              //     // Tệp không tồn tại, yêu cầu API để tạo
-              //     const response = await fetch('/api/tts', {
-              //         method: 'POST',
-              //         headers: {
-              //             'Content-Type': 'application/json',
-              //         },
-              //         body: JSON.stringify({ content: text }),
-              //     });
+              // Kiểm tra nếu tệp đã tồn tại trong public/audio
+              const responseCheck = await fetch(audioPath, { method: 'HEAD' });
+              if (responseCheck.ok) {
+                  // Tệp tồn tại, sử dụng đường dẫn cũ
+                  audio.src = `http://localhost:3000${audioPath}`;
+              } else {
+                  // Tệp không tồn tại, yêu cầu API để tạo
+                  const response = await fetch('/api/tts', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({ content: text }),
+                  });
   
-              //     if (!response.ok) throw new Error('Failed to generate audio');
+                  if (!response.ok) throw new Error('Failed to generate audio');
   
-              //     const audioBlob = await response.blob();
+                  const audioBlob = await response.blob();
   
-              //     // Gửi audioBlob và fileName đến API /api/save-audio để lưu
-              //     const saveResponse = await fetch('/api/save-audio', {
-              //         method: 'POST',
-              //         headers: {
-              //             'Content-Type': 'application/json',
-              //         },
-              //         body: JSON.stringify({
-              //             fileName,
-              //             audioBlob: await audioBlob.arrayBuffer().then(buffer => Buffer.from(buffer).toString('base64')), // Chuyển blob sang base64
-              //         }),
-              //     });
+                  // Gửi audioBlob và fileName đến API /api/save-audio để lưu
+                  const saveResponse = await fetch('/api/save-audio', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                          fileName,
+                          audioBlob: await audioBlob.arrayBuffer().then(buffer => Buffer.from(buffer).toString('base64')), // Chuyển blob sang base64
+                      }),
+                  });
   
-              //     if (!saveResponse.ok) throw new Error('Failed to save audio file');
+                  if (!saveResponse.ok) throw new Error('Failed to save audio file');
   
-              //     audio.src = `http://localhost:3000${audioPath}`;
-              // }
+                  audio.src = `http://localhost:3000${audioPath}`;
+              }
           } else {
             audio.src = `http://localhost:3000/api/tts?content=${encodeURIComponent(
                 text
