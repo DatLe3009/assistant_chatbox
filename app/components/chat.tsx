@@ -105,14 +105,14 @@ const Chat = ({
   } = useSpeechRecognition();
 
   const [processing, setProcessing] = useState(false); // Trạng thái xử lý câu hỏi
-  const [timeoutId, setTimeoutId] = useState(null);
+  // const [timeoutId, setTimeoutId] = useState(null);
 
   // Xử lý câu hỏi khi có finalTranscript
   useEffect(() => {
     if (finalTranscript && !processing) {
       resetTranscript(); // Đặt lại transcript sau khi lưu
       handleQuestionProcessing(finalTranscript);
-      resetTimeout();
+      // resetTimeout();
     } else if (finalTranscript && processing) {
       console.log("đang xử lí không nhận mới:",finalTranscript)
     }
@@ -129,7 +129,7 @@ const Chat = ({
     // console.log("processing: ", processing);
     if (listening && !processing) {
       SpeechRecognition.startListening({ continuous: true });
-      resetTimeout();
+      // resetTimeout();
     }
   }, [listening]);
 
@@ -138,18 +138,32 @@ const Chat = ({
   // }, [processing]);
 
 
-  const resetTimeout = () => {  
-    if (timeoutId) {
-      clearTimeout(timeoutId);
+  // const resetTimeout = () => {  
+  //   if (timeoutId) {
+  //     clearTimeout(timeoutId);
+  //   }
+  //   const id = setTimeout(() => {
+  //     if (isChatting) speakText("Tạm biệt bạn, tôi sẽ kết thúc cuộc trò chuyện.", true);
+  //     setIsChatting(false);
+  //     setTopic(null);
+  //     setMessages([]); // Xóa lịch sử chat
+  //   }, 180000); // Set timeout mới 
+  //   setTimeoutId(id);
+  // };
+
+  // Tự động reset trạng thái nếu không xu li cau hoi nao trong 60 
+  useEffect(() => {
+    let timeout;
+    if (!processing && isChatting) {
+      timeout = setTimeout(() => {
+        speakText("Tạm biệt bạn, tôi sẽ kết thúc cuộc trò chuyện.", true);
+        setIsChatting(false);
+        setTopic(null);
+        setMessages([]); // Xóa lịch sử chat
+      }, 30000);
     }
-    const id = setTimeout(() => {
-      if (isChatting) speakText("Tạm biệt bạn, tôi sẽ kết thúc cuộc trò chuyện.", true);
-      setIsChatting(false);
-      setTopic(null);
-      setMessages([]); // Xóa lịch sử chat
-    }, 180000); // Set timeout mới 
-    setTimeoutId(id);
-  };
+    return () => clearTimeout(timeout); // Dọn dẹp timeout
+  }, [processing, isChatting]);
 
   // Tự động reset trạng thái nếu không có khuôn mặt trong 60 + 10 giây
   // useEffect(() => {
