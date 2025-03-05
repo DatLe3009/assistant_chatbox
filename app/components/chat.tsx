@@ -186,7 +186,7 @@ const Chat = ({
     scrollToBottom();
   }, [messages]);
 
-  // create a new threadID when chat component created
+  // create a new threadID when (chat component created) topic changes
   useEffect(() => {
     const createThread = async () => {
       const res = await fetch(`/api/assistants/threads`, {
@@ -196,7 +196,7 @@ const Chat = ({
       setThreadId(data.threadId);
     };
     createThread();
-  }, []);
+  }, [topic]);
 
   const sendMessage = async (text, topic) => {
     const response = await fetch(
